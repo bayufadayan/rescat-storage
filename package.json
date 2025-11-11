@@ -1,0 +1,32 @@
+{
+  "name": "simple-upload-service",
+  "version": "1.0.0",
+  "description": "Simple file upload API (Express) with public buckets & metadata index",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bayufadayan/rescat-storage.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bayufadayan/rescat-storage/issues"
+  },
+  "homepage": "https://github.com/bayufadayan/rescat-storage#readme",
+  "dependencies": {
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2"
+  }
+}
