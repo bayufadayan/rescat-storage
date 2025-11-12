@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import fsp from 'fs/promises';
 import { env } from '../utils/env.js';
 import { nameWithTsAndId, genId } from '../utils/id.js';
 import { publicUrl } from '../utils/paths.js';
@@ -28,7 +29,7 @@ const storage = multer.diskStorage({
         fs.mkdirSync(dir, { recursive: true });
         cb(null, dir);
     },
-    filename: (req, file, cb) => {
+    filename: (_req, file, cb) => {
         if (!ensureExtAllowed(file.originalname)) {
             return cb(new Error('EXT_NOT_ALLOWED'));
         }
@@ -52,17 +53,49 @@ export const uploadSingle = multer({
 
 export function toMeta({ bucket, filename, originalName, size, mime, createdAt }) {
     const id = genId();
-    return {
-        id,
-        bucket,
-        filename,
-        originalName,
-        mime,
-        size,
-        createdAt
-    };
+    return { id, bucket, filename, originalName, mime, size, createdAt };
 }
 
 export function buildPublicUrl(bucket, filename) {
     return publicUrl(bucket, filename);
+}
+
+/** ====== Tambahan util untuk delete fisik ====== */
+
+function absFilePath(bucket, filename) {
+    return path.join(env.UPLOAD_DIR_PUBLIC, bucket, filename);
+}
+
+/** Hapus satu file di disk; return true kalau terhapus atau memang tidak ada */
+export async function deleteFilePhysical(bucket, filename) {
+    const full = absFilePath(bucket, filename);
+    try {
+        await fsp.unlink(full);
+        return true;
+    } catch (e) {
+        if (e?.code === 'ENOENT') return false; // sudah tidak ada
+        // error lain tetap dilempar agar caller bisa log
+        throw e;
+    }
+}
+
+/** Daftar semua nama file (level 1) di bucket (abaikan error kalau folder belum ada) */
+export async function listBucketNames(bucket) {
+    const dir = path.join(env.UPLOAD_DIR_PUBLIC, bucket);
+    try {
+        const names = await fsp.readdir(dir);
+        return names.filter(Boolean);
+    } catch (e) {
+        if (e?.code === 'ENOENT') return [];
+        throw e;
+    }
+}
+
+/** Kosongkan folder bucket di disk (tanpa menghapus foldernya). Return jumlah file yang diattempt. */
+export async function emptyBucketPhysical(bucket) {
+    const names = await listBucketNames(bucket);
+    const dir = path.join(env.UPLOAD_DIR_PUBLIC, bucket);
+    const ops = names.map((n) => fsp.unlink(path.join(dir, n)).catch(() => null));
+    await Promise.allSettled(ops);
+    return names.length;
 }

@@ -1,6 +1,16 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { uploadOne, listAll, getByIdCtrl, getByNameCtrl, deleteByNameCtrl } from '../controllers/filesController.js';
+import {
+    uploadOne,
+    listAll,
+    getByIdCtrl,
+    getByNameCtrl,
+    deleteByNameCtrl,
+    getByBucketCtrl,
+    deleteSelectedIdsCtrl,
+    deleteBucketCtrl,
+    deleteAllCtrl
+} from '../controllers/filesController.js';
 
 const router = Router();
 
@@ -12,11 +22,17 @@ const uploadLimiter = rateLimit({
     legacyHeaders: false
 });
 
-// routes
+// --- Create / Read ---
 router.post('/', uploadLimiter, uploadOne);
-router.get('/', listAll);
-router.get('/:id', getByIdCtrl);
+router.get('/', listAll); // ?bucket=&limit=&cursor=
+router.get('/bucket/:bucket', getByBucketCtrl);
 router.get('/by-name/:filename', getByNameCtrl);
+router.get('/:id', getByIdCtrl);
+
+// --- Delete ---
 router.delete('/by-name/:filename', deleteByNameCtrl);
+router.delete('/selected', deleteSelectedIdsCtrl); // body: { ids: [] }
+router.delete('/bucket/:bucket', deleteBucketCtrl);
+router.delete('/', deleteAllCtrl); // ?confirm=yes
 
 export default router;
